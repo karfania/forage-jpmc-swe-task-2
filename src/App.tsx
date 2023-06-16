@@ -8,6 +8,7 @@ import './App.css';
  */
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean
 }
 
 /**
@@ -17,11 +18,12 @@ interface IState {
 class App extends Component<{}, IState> {
   constructor(props: {}) {
     super(props);
-
+    // constructor sets state of graph to be hidden and data to be an empty list
     this.state = {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      showGraph: false,
     };
   }
 
@@ -29,18 +31,34 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    // render the graph only when the user clicks 'Start Streaming', which 
+    // sets showGraph to true
+    if (this.state.showGraph) {
+      return (<Graph data={this.state.data}/>)
+    }
+    
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    let x = 0; // guard value to stop the process after 1000 iterations
+    const interval = setInterval(() => {
+      // our function to grab and set the data
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        // Update the state by creating a new array of data that consists of
+        // Previous data in the state and the new data from server
+        this.setState({ 
+          data: serverResponds,
+          showGraph: true, 
+        });
+      });
+      x++;
+      if (x > 1000) {
+        clearInterval(interval);
+      }
+    }, 100); // delay of 100 ms; our function above occurs every 100 ms
   }
 
   /**
